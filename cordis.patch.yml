@@ -1,0 +1,7 @@
+# dsh-speech-to-text profile patch layer.
+# Registers the plugin into the running composition. The official voice-input
+# bundle (`@deepseek-ai/dsh-experimental-voice-input-bundle`) must stay enabled:
+# it provides ctx.speechToText, the recognition-service picker and the microphone UI.
+- insert:
+    - id: dsh-speech-to-text
+      name: 'dsh-speech-to-text'

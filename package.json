@@ -1,0 +1,97 @@
+{
+  "name": "dsh-speech-to-text",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Universal speech-to-text provider for DSH voice input: recognizes recordings through any OpenAI-compatible /audio/transcriptions endpoint configured in Settings → Models.",
+  "type": "module",
+  "main": "index.mjs",
+  "types": "index.d.ts",
+  "exports": {
+    ".": "./index.mjs",
+    "./client": "./client/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./package.json": "./package.json"
+  },
+  "author": "Mikhail Lysikov <d8corp@mail.ru>",
+  "license": "MIT",
+  "keywords": [
+    "DeepSeek",
+    "Harness",
+    "speech",
+    "whisper",
+    "transcription",
+    "plugin"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run build:client && innetjs release -tc -lc -e",
+    "build:client": "innetjs build -i client -tc -lc -e",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dsh": {
+    "manifestVersion": "1",
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-api-remotes"
+      ]
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "~3.18.5"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-credentials": ">=0.2.0-rc.0",
+    "@deepseek-ai/dsh-experimental-speech-to-text": ">=0.2.0-rc.0",
+    "@deepseek-ai/dsh-llm": ">=0.2.0-rc.0",
+    "@deepseek-ai/dsh-settings": ">=0.2.0-rc.0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-credentials": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-experimental-speech-to-text": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-llm": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-settings": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/dsh-api-remotes": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-settings": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-credentials": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-experimental-api-speech-to-text": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-experimental-speech-to-text": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-settings": "0.2.1-rc.2",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.2.1",
+    "@types/react": "18.3.31",
+    "eslint": "^9.39.5",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jest": "^29.16.0",
+    "eslint-plugin-simple-import-sort": "^14.0.0",
+    "eslint-plugin-unused-imports": "^4.4.1",
+    "innetjs": "^4.0.0-beta.15",
+    "jest": "^30.4.2",
+    "neostandard": "^0.13.0",
+    "ts-jest": "^29.4.12",
+    "typescript": "^6.0.3"
+  }
+}

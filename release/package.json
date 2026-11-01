@@ -1,0 +1,70 @@
+{
+  "name": "dsh-speech-to-text",
+  "version": "0.0.1",
+  "description": "Universal speech-to-text provider for DSH voice input: recognizes recordings through any OpenAI-compatible /audio/transcriptions endpoint configured in Settings → Models.",
+  "type": "module",
+  "main": "index.mjs",
+  "types": "index.d.ts",
+  "exports": {
+    ".": "./index.mjs",
+    "./client": "./client/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./package.json": "./package.json"
+  },
+  "author": "Mikhail Lysikov <d8corp@mail.ru>",
+  "license": "MIT",
+  "keywords": [
+    "DeepSeek",
+    "Harness",
+    "speech",
+    "whisper",
+    "transcription",
+    "plugin"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run build:client && innetjs release -tc -lc -e",
+    "build:client": "innetjs build -i client -tc -lc -e",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dsh": {
+    "manifestVersion": "1",
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-api-remotes"
+      ]
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "~3.18.5"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-credentials": ">=0.2.0-rc.0",
+    "@deepseek-ai/dsh-experimental-speech-to-text": ">=0.2.0-rc.0",
+    "@deepseek-ai/dsh-llm": ">=0.2.0-rc.0",
+    "@deepseek-ai/dsh-settings": ">=0.2.0-rc.0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-credentials": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-experimental-speech-to-text": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-llm": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-settings": {
+      "optional": true
+    }
+  }
+}
