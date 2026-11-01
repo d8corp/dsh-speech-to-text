@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "private": true,
   "description": "Universal speech-to-text provider for DSH voice input: recognizes recordings through any OpenAI-compatible /audio/transcriptions endpoint configured in Settings → Models.",
-  "icon": "./icon.png",
   "type": "module",
   "main": "index.mjs",
   "types": "index.d.ts",
