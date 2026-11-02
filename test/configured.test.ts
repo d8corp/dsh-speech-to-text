@@ -1,8 +1,8 @@
-import type { CredentialState, DirectoryRoute, NamespaceValue } from '../src/utils'
+import type { CredentialInfo, LlmConfigurableProvider, SettingsNamespaceView } from '../src/dsh'
 import { listConfiguredProviders } from '../src/utils'
 
 /** One declared route, shaped as the model directory reports it. */
-const route: DirectoryRoute = {
+const route: LlmConfigurableProvider = {
   provider: 'minimax-cn',
   displayName: 'MiniMax',
   settingsNs: 'dsh-llm-pi-ai',
@@ -11,9 +11,20 @@ const route: DirectoryRoute = {
 
 const LLM_NS = 'dsh-llm-pi-ai'
 
-/** A settings document holding one profile for `route`. */
-function document (profile: unknown): NamespaceValue[] {
-  return [{ ns: LLM_NS, value: { providers: { 'minimax-cn': profile } } }]
+/** A route profile, as the redacted settings document reports it. */
+type Profile = { [key: string]: string }
+
+/** A settings document holding one profile for `route`, as the browser mirror reports it. */
+function document (profile?: Profile): SettingsNamespaceView[] {
+  return [{
+    ns: LLM_NS,
+    autoGenerate: true,
+    schema: {},
+    value: { providers: { 'minimax-cn': profile ?? {} } },
+    applies: 'live',
+    secrets: [],
+    revision: 1,
+  }]
 }
 
 /** A credential service reporting `configured` references as set, and the batches it saw. */
@@ -23,7 +34,13 @@ function credentials (...configured: string[]) {
   const read = async (refs: string[]) => {
     asked.push(refs)
 
-    return Object.fromEntries(refs.map((ref): [string, CredentialState] => [ref, { configured: configured.includes(ref) }]))
+    const answer: Record<string, CredentialInfo> = {}
+
+    for (const ref of refs) {
+      answer[ref] = { configured: configured.includes(ref), writable: true }
+    }
+
+    return answer
   }
 
   return { asked, read }
@@ -65,7 +82,7 @@ describe('listConfiguredProviders', () => {
     const { read } = credentials('XAI_API_KEY')
 
     const kept = await listConfiguredProviders(
-      [{ ...route, provider: 'x-ai', defaultBaseURL: 'https://api.x.example/v1', nativeAuth: { env: ['XAI_API_KEY'] } }],
+      [{ ...route, provider: 'x-ai', defaultBaseURL: 'https://api.x.example/v1', nativeAuth: { env: ['XAI_API_KEY'], oauth: false } }],
       document(undefined),
       read,
     )
@@ -75,7 +92,7 @@ describe('listConfiguredProviders', () => {
 
   it('asks for every reference in one batch', async () => {
     const { asked, read } = credentials()
-    const other: DirectoryRoute = { ...route, provider: 'vllm', settingsPath: ['providers', 'vllm'] }
+    const other: LlmConfigurableProvider = { ...route, provider: 'vllm', settingsPath: ['providers', 'vllm'] }
 
     await listConfiguredProviders([route, other], document({}), read)
 

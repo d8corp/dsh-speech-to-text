@@ -10,9 +10,11 @@
  * @module dsh-speech-to-text/page
  */
 
+import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { FALLBACK_PROVIDER_ID, LANGUAGE_LABELS, LANGUAGES, PROVIDER_ID, PROVIDER_NAME, SETTINGS_NS } from '../../constants'
+import type { LlmConfigurableProvider, RemoteResult, SpeechSelection, TypertRemoteNamespaceMap } from '../../dsh'
 import type { SelectOption } from '../../ui'
 import { Button, Link, Notice, Row, Select, Switch } from '../../ui'
 
@@ -22,55 +24,15 @@ export interface SectionValues {
   model: string
 }
 
-/** Shared form over this plugin's settings namespace. */
-export interface FormLike {
-  getSnapshot: () => { status: 'loading' | 'ready' | 'unavailable', value: SectionValues | undefined }
-  subscribe: (listener: () => void) => () => void
-  set: (field: string, value: unknown) => Promise<boolean>
-}
+/** Speech remote face used by this page: only the two calls the page makes. */
+export type SpeechLike = Pick<TypertRemoteNamespaceMap['speech'], 'catalog' | 'configure'>
 
-/** One configured provider route. */
-export interface RouteEntry {
-  provider: string
-  displayName: string
-}
-
-/**
- * What every generated Remote method resolves to: the Host's value, or the
- * carrier's failure. The Remote face folds transport faults into the error
- * branch, so a call never rejects and an unread answer is a silent lie —
- * `catalog()` answers `{ ok, value }`, not the catalog.
- */
-export type RemoteAnswer<T> =
-  | { ok: true, value: T }
-  | { ok: false, error: { message: string } }
-
-/** The current selection the voice-input bundle owns, as the Remote reports it. */
-export interface SpeechCatalog {
-  selection: { providerId: string, language: string }
-}
-
-/** Selection read from the official speech service. */
-export interface Selection {
-  providerId: string
-  language: string
-}
-
-/** Speech remote face used by this page. */
-export interface SpeechLike {
-  catalog: () => Promise<RemoteAnswer<SpeechCatalog>>
-  configure: (patch: { providerId?: string, language?: string }) => Promise<RemoteAnswer<void>>
-}
-
-/** LLM remote face used by this page. */
-export interface LlmLike {
-  listConfigurableProviders: () => Promise<RemoteAnswer<RouteEntry[]>>
-  discoverModels: (settingsNs: string, request: { provider: string }) => Promise<RemoteAnswer<Array<{ id: string }>>>
-}
+/** LLM remote face used by this page: only the two calls the page makes. */
+export type LlmLike = Pick<TypertRemoteNamespaceMap['llm'], 'listConfigurableProviders' | 'discoverModels'>
 
 /** Props injected by the slot registration. */
 export interface SettingsProps {
-  form: FormLike
+  form: ConfigForm<SectionValues>
   speech: SpeechLike
   llm: LlmLike
   /** Re-reads on settings, adapter or credential changes. */
@@ -93,7 +55,7 @@ function messageOf (cause: unknown, fallback: string): string {
 }
 
 /**
- * Read the value out of a {@link RemoteAnswer}.
+ * Read the value out of a {@link RemoteResult}.
  *
  * A failed Remote call resolves rather than rejects, so this is the only place
  * its message can reach the notice line: throwing here routes it through the
@@ -103,7 +65,7 @@ function messageOf (cause: unknown, fallback: string): string {
  * @returns the Host's value.
  * @throws the failure's message when the answer carries one.
  */
-function valueOf<T> (answer: RemoteAnswer<T>): T {
+function valueOf<T> (answer: RemoteResult<T>): T {
   if (answer.ok) return answer.value
 
   throw new Error(answer.error.message)
@@ -117,8 +79,8 @@ function valueOf<T> (answer: RemoteAnswer<T>): T {
  */
 export function Settings (props: SettingsProps) {
   const [values, setValues] = useState<SectionValues | undefined>(() => props.form.getSnapshot().value)
-  const [selection, setSelection] = useState<Selection | undefined>(undefined)
-  const [routes, setRoutes] = useState<RouteEntry[]>([])
+  const [selection, setSelection] = useState<SpeechSelection | undefined>(undefined)
+  const [routes, setRoutes] = useState<LlmConfigurableProvider[]>([])
   const [models, setModels] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [listingModels, setListingModels] = useState(false)
@@ -133,9 +95,7 @@ export function Settings (props: SettingsProps) {
   /** Re-read the recognition language and service the voice-input bundle owns. */
   const refreshSelection = useCallback(async () => {
     try {
-      const { selection } = valueOf(await props.speech.catalog())
-
-      setSelection({ providerId: selection.providerId, language: selection.language })
+      setSelection(valueOf(await props.speech.catalog()).selection)
     } catch (cause) {
       setError(messageOf(cause, 'Voice input settings are unavailable in this profile.'))
     }

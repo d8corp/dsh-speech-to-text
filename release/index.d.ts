@@ -14,7 +14,7 @@
  * here can hold a credential.
  */
 import z from '@deepseek-ai/schemastery';
-import type { DiscoveredModel, HostContext, ModelDiscoveryRequest, SpeechProvider, Volatile } from './dsh';
+import type { HostContext, LlmDiscoveredModel, LlmModelDiscoveryRequest, SpeechProvider, Volatile } from './dsh';
 /** Editable configuration of this entry; both fields hot-apply. */
 export declare const Config: z<Schemastery.ObjectS<NoInfer<{
     provider: z<string, string, "volatile-defined">;
@@ -51,7 +51,7 @@ export declare function createProvider(ctx: HostContext, config: RuntimeConfig):
  * @param ctx host context.
  * @returns the model discovery responder.
  */
-export declare function createDiscovery(ctx: HostContext): (request: ModelDiscoveryRequest, signal?: AbortSignal) => Promise<DiscoveredModel[]>;
+export declare function createDiscovery(ctx: HostContext): (request: LlmModelDiscoveryRequest, signal?: AbortSignal) => Promise<LlmDiscoveredModel[]>;
 /**
  * Mount the page policy, the recognizer and the model interrogation.
  *

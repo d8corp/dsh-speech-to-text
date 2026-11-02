@@ -1,4 +1,15 @@
+import { credentialRef, isCredentialRefName } from "@deepseek-ai/dsh-credentials";
 // src/route.ts
+/**
+* Resolving a provider route chosen in Settings → Models into an endpoint this
+* plugin can call: a base URL and an API key.
+*
+* Neither value is stored by this plugin. The route's profile is read through
+* the settings service, exactly as the official Models page reads it, and the
+* key is resolved per operation through the credentials service, so a key
+* rotated in Settings → Models takes effect on the next recording.
+* @module dsh-speech-to-text/route
+*/
 /** A route that cannot be called, described without any secret material. */
 var RouteError = class extends Error {
 	constructor(message, code) {
@@ -18,10 +29,26 @@ var RouteError = class extends Error {
 * @returns the reference name, e.g. `MINIMAX_CN_API_KEY`.
 */
 function deriveKeyRef(provider) {
-	return `${provider.toUpperCase().replace(/[^A-Z0-9]+/g, "_")}_API_KEY`;
+	return credentialRef(`${provider.toUpperCase().replace(/[^A-Z0-9]+/g, "_")}_API_KEY`);
 }
 function text(value) {
 	return typeof value === "string" ? value.trim() : "";
+}
+/**
+* The credential reference one route answers to.
+*
+* The profile's own name wins; a name outside the credential grammar has no
+* reference to miss, and an absent one leaves the conventional derived name.
+* Both the recorder and the settings page ask through here, so the picker
+* cannot offer a route the recorder would refuse for a key.
+*
+* @param provider - route id.
+* @param profile - the route's stored profile, when it has one.
+* @returns the reference the key is read from.
+*/
+function keyRefOf(provider, profile) {
+	const named = text(profile?.apiKeyEnv);
+	return named !== "" && isCredentialRefName(named) ? credentialRef(named) : deriveKeyRef(provider);
 }
 /**
 * Read one route's stored profile out of the settings snapshot.
@@ -66,8 +93,7 @@ async function resolveEndpoint(ctx, provider) {
 	const profile = readProfile(ctx, entry);
 	const baseURL = text(profile?.baseURL) || text(entry.defaultBaseURL);
 	if (baseURL === "") throw new RouteError(`Provider "${displayName}" has no base URL. Set one in Settings → Models.`, "route-base-url");
-	const keyRef = text(profile?.apiKeyEnv) || deriveKeyRef(provider);
-	const apiKey = text((await ctx.credentials.resolve(keyRef))?.value);
+	const apiKey = text((await ctx.credentials.resolve(keyRefOf(provider, profile)))?.value);
 	if (apiKey === "") throw new RouteError(`Provider "${displayName}" has no API key. Store it in Settings → Models.`, "route-key-missing");
 	return {
 		provider,
@@ -76,4 +102,4 @@ async function resolveEndpoint(ctx, provider) {
 		apiKey
 	};
 }
-export { RouteError, deriveKeyRef, findRoute, resolveEndpoint };
+export { RouteError, deriveKeyRef, findRoute, keyRefOf, resolveEndpoint };

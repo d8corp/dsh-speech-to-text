@@ -8,7 +8,7 @@
  * rotated in Settings → Models takes effect on the next recording.
  * @module dsh-speech-to-text/route
  */
-import type { HostContext, LlmConfigurableProvider } from './dsh';
+import type { CredentialRef, HostContext, LlmConfigurableProvider } from './dsh';
 /** An endpoint ready to be called. */
 export interface Endpoint {
     /** Provider route id, kept for error messages. */
@@ -35,7 +35,20 @@ export declare class RouteError extends Error {
  * @param provider - route id, e.g. `minimax-cn`.
  * @returns the reference name, e.g. `MINIMAX_CN_API_KEY`.
  */
-export declare function deriveKeyRef(provider: string): string;
+export declare function deriveKeyRef(provider: string): CredentialRef;
+/**
+ * The credential reference one route answers to.
+ *
+ * The profile's own name wins; a name outside the credential grammar has no
+ * reference to miss, and an absent one leaves the conventional derived name.
+ * Both the recorder and the settings page ask through here, so the picker
+ * cannot offer a route the recorder would refuse for a key.
+ *
+ * @param provider - route id.
+ * @param profile - the route's stored profile, when it has one.
+ * @returns the reference the key is read from.
+ */
+export declare function keyRefOf(provider: string, profile: Record<string, unknown> | undefined): CredentialRef;
 /**
  * Locate a directory entry for a route id.
  *

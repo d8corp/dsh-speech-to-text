@@ -17,7 +17,7 @@
 import z from '@deepseek-ai/schemastery'
 
 import { LANGUAGES, PROVIDER_ID, PROVIDER_NAME, SETTINGS_NS, wavDurationSeconds } from './constants'
-import type { DiscoveredModel, HostContext, ModelDiscoveryRequest, SpeechProvider, Volatile } from './dsh'
+import type { HostContext, LlmDiscoveredModel, LlmModelDiscoveryRequest, SpeechProvider, Volatile } from './dsh'
 import { resolveEndpoint } from './route'
 import { listModels, probeTranscriptions, SttError, transcribe } from './stt'
 
@@ -96,7 +96,7 @@ export function createProvider (ctx: HostContext, config: RuntimeConfig): Speech
  */
 export function createDiscovery (
   ctx: HostContext,
-): (request: ModelDiscoveryRequest, signal?: AbortSignal) => Promise<DiscoveredModel[]> {
+): (request: LlmModelDiscoveryRequest, signal?: AbortSignal) => Promise<LlmDiscoveredModel[]> {
   return async (request, signal) => {
     const provider = (request.provider ?? '').trim()
 
@@ -121,7 +121,7 @@ export function createDiscovery (
 
     const models = await listModels(endpoint, signal)
 
-    return models.map((id): DiscoveredModel => ({ id }))
+    return models.map((id): LlmDiscoveredModel => ({ id }))
   }
 }
 

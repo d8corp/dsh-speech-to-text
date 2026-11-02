@@ -5,33 +5,13 @@
  * filled in or not, and an unconfigured route only fails once the user has
  * chosen it and recorded. The two requirements below are the ones the host
  * applies when it resolves the same route for a recording — a base URL and a
- * stored credential — so the picker and the microphone never disagree about
- * what counts as configured.
+ * stored credential, through the same {@link keyRefOf} — so the picker and the
+ * microphone never disagree about what counts as configured.
  * @module dsh-speech-to-text/configured
  */
 
-import { deriveKeyRef } from '../../route'
-
-/** One provider route, as the model directory reports it. */
-export interface DirectoryRoute {
-  provider: string
-  displayName: string
-  settingsNs: string
-  settingsPath: readonly string[]
-  defaultBaseURL?: string
-  nativeAuth?: { env: readonly string[] }
-}
-
-/** One namespace of the settings document, as the browser mirror reports it. */
-export interface NamespaceValue {
-  ns: string
-  value: unknown
-}
-
-/** What the credential service says about one reference. */
-export interface CredentialState {
-  configured: boolean
-}
+import type { CredentialInfo, LlmConfigurableProvider, SettingsNamespaceView } from '../../dsh'
+import { keyRefOf } from '../../route'
 
 /** Read a string out of an untyped settings node. */
 function text (value: unknown): string {
@@ -45,7 +25,7 @@ function text (value: unknown): string {
  * @param route the directory entry naming the namespace and path of the profile.
  * @returns the profile object, or undefined when nothing is stored for the route.
  */
-function readProfile (namespaces: readonly NamespaceValue[], route: DirectoryRoute): Record<string, unknown> | undefined {
+function readProfile (namespaces: readonly SettingsNamespaceView[], route: LlmConfigurableProvider): Record<string, unknown> | undefined {
   const view = namespaces.find((namespace) => namespace.ns === route.settingsNs)
 
   if (view === undefined) return undefined
@@ -66,18 +46,16 @@ function readProfile (namespaces: readonly NamespaceValue[], route: DirectoryRou
 /**
  * The credential references that can authenticate one route.
  *
- * The profile's own reference wins, exactly as it does host-side; the
- * conventional derived name and any environment the adapter authenticates
- * through on its own are the alternatives a shipped route answers to.
+ * The route's own reference comes from {@link keyRefOf}, the same rule the
+ * recorder follows; the environment variables the adapter authenticates
+ * through on its own are alternatives a shipped route answers to.
  *
  * @param route the directory entry.
  * @param profile the route's stored profile.
- * @returns reference names, in lookup order.
+ * @returns reference names.
  */
-function keyRefs (route: DirectoryRoute, profile: Record<string, unknown> | undefined): string[] {
-  const named = text(profile?.apiKeyEnv)
-
-  return [named || deriveKeyRef(route.provider), ...(route.nativeAuth?.env ?? [])]
+function routeKeyRefs (route: LlmConfigurableProvider, profile: Record<string, unknown> | undefined): string[] {
+  return [keyRefOf(route.provider, profile), ...(route.nativeAuth?.env ?? [])]
 }
 
 /**
@@ -93,10 +71,10 @@ function keyRefs (route: DirectoryRoute, profile: Record<string, unknown> | unde
  * @returns the routes Settings → Models has configured, in the same order.
  */
 export async function listConfiguredProviders (
-  routes: readonly DirectoryRoute[],
-  namespaces: readonly NamespaceValue[],
-  describe: (refs: string[]) => Promise<Record<string, CredentialState> | undefined>,
-): Promise<DirectoryRoute[]> {
+  routes: readonly LlmConfigurableProvider[],
+  namespaces: readonly SettingsNamespaceView[],
+  describe: (refs: string[]) => Promise<Record<string, CredentialInfo> | undefined>,
+): Promise<LlmConfigurableProvider[]> {
   const profiles = new Map<string, Record<string, unknown> | undefined>()
   const refs = new Set<string>()
 
@@ -104,10 +82,10 @@ export async function listConfiguredProviders (
     const profile = readProfile(namespaces, route)
 
     profiles.set(route.provider, profile)
-    for (const ref of keyRefs(route, profile)) refs.add(ref)
+    for (const ref of routeKeyRefs(route, profile)) refs.add(ref)
   }
 
-  const states: Record<string, CredentialState> = {}
+  const states: Record<string, CredentialInfo> = {}
 
   try {
     const batch = [...refs]
@@ -124,6 +102,6 @@ export async function listConfiguredProviders (
     const profile = profiles.get(route.provider)
     const endpoint = text(profile?.baseURL) || text(route.defaultBaseURL)
 
-    return endpoint !== '' && keyRefs(route, profile).some((ref) => states[ref]?.configured === true)
+    return endpoint !== '' && routeKeyRefs(route, profile).some((ref) => states[ref]?.configured === true)
   })
 }

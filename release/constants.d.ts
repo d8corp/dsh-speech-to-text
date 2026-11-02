@@ -2,19 +2,24 @@
  * Fixed identifiers and vocabulary shared by the host and browser halves.
  * @module dsh-speech-to-text/constants
  */
+import type { SpeechProviderId } from './dsh';
 /**
  * Id registered in the global speech-provider registry. It is namespaced
  * because ids are global and a duplicate registration throws: the official
  * SenseVoice provider uses `sensevoice-local` and other recognizers own
  * their own short names.
+ *
+ * The registry's own `SpeechProviderId` brand is compile-time only; the cast
+ * keeps it without a runtime import of `dsh-brand`, which this plugin does not
+ * declare.
  */
-export declare const PROVIDER_ID = "speech-to-text-universal";
+export declare const PROVIDER_ID: SpeechProviderId;
 /** Text shown in Plugins → Voice input → Recognition service. */
 export declare const PROVIDER_NAME = "Speech to Text";
 /** Profile entry id from `cordis.patch.yml`, which is also the settings namespace this plugin owns. */
 export declare const SETTINGS_NS = "dsh-speech-to-text";
 /** Recognizer selected when this plugin's switcher turns off. */
-export declare const FALLBACK_PROVIDER_ID = "sensevoice-local";
+export declare const FALLBACK_PROVIDER_ID: SpeechProviderId;
 /**
  * Language hints this provider accepts, in picker order.
  *

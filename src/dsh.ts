@@ -1,116 +1,75 @@
 /**
- * Structural slices of the DSH host services this plugin consumes.
+ * The DSH contracts this plugin builds on.
  *
- * The plugin declares its peers as optional peer dependencies, so the profile
- * that composes it may not resolve those packages from this directory at all.
- * Describing only the members actually used keeps the compiled host file free
- * of imports that could fail to resolve, and every shape here is read straight
- * from the service contracts: `dsh-experimental-speech-to-text`, `dsh-llm`,
- * `dsh-settings` and `dsh-credentials`.
+ * Every type here is the owning package's own declaration. This file used to
+ * copy the members the plugin read, and the copies silently fell behind: the
+ * recognizer id is a branded `SpeechProviderId`, the directory's entries grew
+ * `declared` and `nativeAuth`, and a resolved credential carries the source
+ * layer that supplied it. The copies are type-only imports, so the compiled
+ * host file gains no runtime import and a profile that does not resolve a peer
+ * package still loads the plugin.
  * @module dsh-speech-to-text/dsh
  */
 
+import type { Context, Fiber, LoggerService } from '@deepseek-ai/cordis'
+import type { CredentialProvider } from '@deepseek-ai/dsh-credentials'
+import type {} from '@deepseek-ai/dsh-experimental-api-speech-to-text/remote'
+import type SpeechToText from '@deepseek-ai/dsh-experimental-speech-to-text'
+import type { LlmRuntime } from '@deepseek-ai/dsh-llm'
+import type {} from '@deepseek-ai/dsh-llm/remote'
+import type { SettingsForms } from '@deepseek-ai/dsh-settings'
+
 /** One config field that hot-applies without a restart. */
-export interface Volatile<T> {
-  get (): T
-}
+export type { Volatile } from '@deepseek-ai/cordis'
 
-/** Metadata a recognizer advertises to the official picker. */
-export interface SpeechProviderInfo {
-  id: string
-  name: string
-  location: 'host-local' | 'cloud'
-  languages: readonly string[]
-}
+/** Credential reference space. */
+export type { CredentialRef } from '@deepseek-ai/dsh-credentials'
 
-/** One recording handed to a provider by the speech service. */
-export interface TranscriptionInput {
-  audio: Uint8Array
-  language: string
-}
-
-/** What a provider reports back for one recording. */
-export interface TranscriptionResult {
-  text: string
-  audioSeconds: number
-  inferenceSeconds: number
-}
-
-/** The recognizer contract. */
-export interface SpeechProvider {
-  info: SpeechProviderInfo
-  transcribe (input: TranscriptionInput, signal?: AbortSignal): Promise<TranscriptionResult>
-}
-
-/** The registry this plugin registers into. */
-export interface SpeechService {
-  register (provider: SpeechProvider): () => void
-}
+/** Presence and writability of one reference, never its value. */
+export type { CredentialInfo } from '@deepseek-ai/dsh-credentials/types'
 
 /** One provider route the configuration surfaces can activate. */
-export interface LlmConfigurableProvider {
-  provider: string
-  displayName: string
-  settingsNs: string
-  settingsPath: readonly string[]
-  defaultBaseURL?: string
-}
+export type { LlmConfigurableProvider } from '@deepseek-ai/dsh-llm/types'
 
-/** One model advertised by a provider endpoint. */
-export interface DiscoveredModel {
-  id: string
-  name?: string
-}
+/** One model an endpoint interrogation reports. */
+export type { LlmDiscoveredModel } from '@deepseek-ai/dsh-llm/types'
 
 /** Draft endpoint description a model interrogation is given. */
-export interface ModelDiscoveryRequest {
-  provider?: string
-  baseURL?: string
-}
-
-/** The LLM directory members this plugin uses. */
-export interface LlmService {
-  listConfigurableProviders (): LlmConfigurableProvider[]
-  registerModelDiscovery (
-    settingsNs: string,
-    discover: (request: ModelDiscoveryRequest, signal?: AbortSignal) => Promise<DiscoveredModel[]>,
-  ): () => void
-}
+export type { LlmModelDiscoveryRequest } from '@deepseek-ai/dsh-llm/types'
 
 /** One entry's live configuration, as the settings service reports it. */
-export interface SettingsDescriptor {
-  ns: string
-  value: unknown
-}
+export type { SettingsDescriptor } from '@deepseek-ai/dsh-settings'
 
-/** The settings facade members this plugin uses. */
-export interface SettingsService {
-  describe (options?: { redactSecrets?: boolean }): SettingsDescriptor[]
-  configure (presentation: { auto?: boolean }, owner?: unknown): () => void
-}
+/** One namespace of the settings document, as the browser mirror reports it. */
+export type { SettingsNamespaceView } from '@deepseek-ai/dsh-settings/types'
 
-/** A resolved credential; only `value` is read, and only in the host. */
-export interface CredentialResolution {
-  value?: string
-}
+/** One complete recording handed to a provider by the speech service. */
+export type { SpeechInput } from '@deepseek-ai/dsh-experimental-speech-to-text/types'
 
-/** The credentials facade member this plugin uses. */
-export interface CredentialsService {
-  resolve (ref: string): Promise<CredentialResolution | undefined>
-}
+/** Recognizer identity: a branded id, because the registry rejects a duplicate. */
+export type { SpeechProviderId } from '@deepseek-ai/dsh-experimental-speech-to-text/types'
 
-/** Logger slice used for one warning path. */
-export interface Logger {
-  warn (message: string): void
-}
+/** The selection the voice-input bundle owns. */
+export type { SpeechSelection } from '@deepseek-ai/dsh-experimental-speech-to-text/types'
 
-/** Host context of this plugin. */
-export interface HostContext {
-  speechToText: SpeechService
-  llm: LlmService
-  settings: SettingsService
-  credentials: CredentialsService
-  logger: Logger
-  fiber: unknown
-  effect (callback: () => unknown, label?: string): unknown
+/** The recognizer contract. */
+export type { SpeechProvider } from '@deepseek-ai/dsh-experimental-speech-to-text/types'
+
+/** One Remote answer, and the namespaces the host declares their calls in. */
+export type { RemoteResult, TypertRemoteNamespaceMap } from '@deepseek-ai/dsh-typert-protocol'
+
+/**
+ * The host context this plugin reads.
+ *
+ * Each service is a `Pick` of the package's own service class, so a signature
+ * cannot fall behind the host's while still leaving room for the offline suite
+ * to stand in for a profile with a plain object.
+ */
+export interface HostContext extends Pick<Context, 'effect'> {
+  speechToText: Pick<SpeechToText, 'register'>
+  llm: Pick<LlmRuntime, 'listConfigurableProviders' | 'registerModelDiscovery'>
+  settings: Pick<SettingsForms, 'describe' | 'configure'>
+  credentials: Pick<CredentialProvider, 'resolve'>
+  logger: Pick<LoggerService, 'warn'>
+  fiber: Fiber
 }

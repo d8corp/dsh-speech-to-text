@@ -1,9 +1,20 @@
 /**
  * A host context carrying only the service slices this plugin touches, so the
  * offline suite runs without a DSH profile.
+ *
+ * Every member below is checked against the owning package's declaration, which
+ * `src/dsh.ts` re-exports, so a host signature that moves breaks here first
+ * rather than in the profile.
  */
 
-import type { DiscoveredModel, HostContext, LlmConfigurableProvider, ModelDiscoveryRequest, SpeechProvider } from '../../src/dsh'
+import type {
+  HostContext,
+  LlmConfigurableProvider,
+  LlmDiscoveredModel,
+  LlmModelDiscoveryRequest,
+  SettingsDescriptor,
+  SpeechProvider,
+} from '../../src/dsh'
 
 /** One recorded interaction. */
 export interface Recorded {
@@ -26,7 +37,19 @@ export interface Stub {
   ctx: HostContext
   recorded: Recorded[]
   providers: SpeechProvider[]
-  discoveries: Array<(request: ModelDiscoveryRequest, signal?: AbortSignal) => Promise<DiscoveredModel[]>>
+  discoveries: Array<(request: LlmModelDiscoveryRequest, signal?: AbortSignal) => Promise<readonly LlmDiscoveredModel[]>>
+}
+
+/** The minimum the settings service reports for one entry. */
+function descriptor (ns: string, value: unknown): SettingsDescriptor {
+  return {
+    ns: ns as SettingsDescriptor['ns'],
+    autoGenerate: true,
+    schema: {},
+    value,
+    revision: 1,
+    applies: 'live',
+  }
 }
 
 /**
@@ -39,6 +62,7 @@ export function createHostStub (options: StubOptions = {}): Stub {
   const recorded: Recorded[] = []
   const providers: SpeechProvider[] = []
   const discoveries: Stub['discoveries'] = []
+  const forms = (options.settings ?? []).map(({ ns, value }) => descriptor(ns, value))
 
   const stub: Stub = {
     recorded,
@@ -50,7 +74,7 @@ export function createHostStub (options: StubOptions = {}): Stub {
           providers.push(provider)
           recorded.push({ kind: 'register', detail: provider.info.id })
 
-          return () => {
+          return async () => {
             recorded.push({ kind: 'unregister', detail: provider.info.id })
           }
         },
@@ -67,7 +91,7 @@ export function createHostStub (options: StubOptions = {}): Stub {
         },
       },
       settings: {
-        describe: () => options.settings ?? [],
+        describe: () => forms,
         configure (presentation) {
           recorded.push({ kind: 'page-policy', detail: presentation })
 
@@ -78,7 +102,7 @@ export function createHostStub (options: StubOptions = {}): Stub {
         async resolve (ref) {
           const keys = options.keys ?? {}
 
-          return keys[ref] === undefined ? undefined : { value: keys[ref] }
+          return keys[ref] === undefined ? undefined : { value: keys[ref], source: 'stub' }
         },
       },
       logger: {
@@ -86,10 +110,16 @@ export function createHostStub (options: StubOptions = {}): Stub {
           recorded.push({ kind: 'warn', detail: message })
         },
       },
-      fiber: {},
-      effect (callback) {
-        return callback()
-      },
+      fiber: {} as HostContext['fiber'],
+      // cordis types `effect` as a pair of overloads differing only in the awaitability of
+      // the disposer it returns; the stub runs the body and hands back the plain half.
+      effect: ((execute: () => unknown) => {
+        const dispose = execute()
+
+        return async () => {
+          if (typeof dispose === 'function') await (dispose as () => unknown)()
+        }
+      }) as HostContext['effect'],
     },
   }
 

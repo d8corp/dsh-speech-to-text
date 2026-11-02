@@ -1,5 +1,5 @@
 import { FALLBACK_PROVIDER_ID, LANGUAGES, PROVIDER_ID, PROVIDER_NAME, SETTINGS_NS } from '../src/constants'
-import type { LlmConfigurableProvider, TranscriptionInput } from '../src/dsh'
+import type { LlmConfigurableProvider, SpeechInput } from '../src/dsh'
 import { apply, Config, createDiscovery, createProvider, inject, name } from '../src/index'
 import type { SttError } from '../src/stt'
 import { createConfigStub, createHostStub } from './fixtures/host'
@@ -15,7 +15,10 @@ const route: LlmConfigurableProvider = {
 }
 
 /** One recording, as the speech service hands it over: two seconds of audio. */
-const input: TranscriptionInput = { audio: new Uint8Array(44 + 64_000), language: 'auto' }
+const input: SpeechInput = { audio: new Uint8Array(44 + 64_000), language: 'auto' }
+
+/** The cancellation the speech service always supplies alongside a recording. */
+const signal = new AbortController().signal
 
 /** A host in which `route` is stored pointing at `baseURL`, with a key. */
 function host (baseURL: string) {
@@ -96,7 +99,7 @@ describe('createProvider', () => {
       const { ctx } = host(server.baseURL)
       const config = { provider: '', model: 'whisper-1' }
 
-      const noProvider = await reason(createProvider(ctx, createConfigStub(config)).transcribe(input))
+      const noProvider = await reason(createProvider(ctx, createConfigStub(config)).transcribe(input, signal))
 
       expect((noProvider as SttError).code).toBe('stt-incomplete')
       expect((noProvider as SttError).message).toMatch(/choose a provider in settings/i)
@@ -104,7 +107,7 @@ describe('createProvider', () => {
       config.provider = 'vllm'
       config.model = ''
 
-      const noModel = await reason(createProvider(ctx, createConfigStub(config)).transcribe(input))
+      const noModel = await reason(createProvider(ctx, createConfigStub(config)).transcribe(input, signal))
 
       expect((noModel as SttError).message).toMatch(/choose a model in settings/i)
       expect(server.requests).toHaveLength(0)
@@ -115,7 +118,7 @@ describe('createProvider', () => {
     await withEndpoint((_request, res) => reply(res, 200, { text: 'двадцать две секунды' }), async (server) => {
       const { ctx } = host(server.baseURL)
 
-      const result = await createProvider(ctx, createConfigStub({ provider: 'vllm', model: 'whisper-1' })).transcribe(input)
+      const result = await createProvider(ctx, createConfigStub({ provider: 'vllm', model: 'whisper-1' })).transcribe(input, signal)
 
       expect(result.text).toBe('двадцать две секунды')
       expect(result.audioSeconds).toBe(2)
@@ -133,9 +136,9 @@ describe('createProvider', () => {
       const values = { provider: 'vllm', model: 'whisper-1' }
       const provider = createProvider(ctx, createConfigStub(values))
 
-      await provider.transcribe(input)
+      await provider.transcribe(input, signal)
       values.model = 'paraformer'
-      await provider.transcribe(input)
+      await provider.transcribe(input, signal)
 
       expect(readMultipart(server.requests[1]).fields.model).toBe('paraformer')
     })
@@ -145,7 +148,7 @@ describe('createProvider', () => {
     await withEndpoint((_request, res) => reply(res, 401, { detail: 'bad test-key' }), async (server) => {
       const { ctx } = host(server.baseURL)
 
-      const failure = await reason(createProvider(ctx, createConfigStub({ provider: 'vllm', model: 'm' })).transcribe(input))
+      const failure = await reason(createProvider(ctx, createConfigStub({ provider: 'vllm', model: 'm' })).transcribe(input, signal))
 
       expect((failure as SttError).code).toBe('stt-auth')
       expect((failure as SttError).message).not.toContain('test-key')

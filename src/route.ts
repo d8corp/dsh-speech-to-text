@@ -9,7 +9,9 @@
  * @module dsh-speech-to-text/route
  */
 
-import type { HostContext, LlmConfigurableProvider } from './dsh'
+import { credentialRef, isCredentialRefName } from '@deepseek-ai/dsh-credentials'
+
+import type { CredentialRef, HostContext, LlmConfigurableProvider } from './dsh'
 
 /** An endpoint ready to be called. */
 export interface Endpoint {
@@ -44,12 +46,30 @@ export class RouteError extends Error {
  * @param provider - route id, e.g. `minimax-cn`.
  * @returns the reference name, e.g. `MINIMAX_CN_API_KEY`.
  */
-export function deriveKeyRef (provider: string): string {
-  return `${provider.toUpperCase().replace(/[^A-Z0-9]+/g, '_')}_API_KEY`
+export function deriveKeyRef (provider: string): CredentialRef {
+  return credentialRef(`${provider.toUpperCase().replace(/[^A-Z0-9]+/g, '_')}_API_KEY`)
 }
 
 function text (value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+/**
+ * The credential reference one route answers to.
+ *
+ * The profile's own name wins; a name outside the credential grammar has no
+ * reference to miss, and an absent one leaves the conventional derived name.
+ * Both the recorder and the settings page ask through here, so the picker
+ * cannot offer a route the recorder would refuse for a key.
+ *
+ * @param provider - route id.
+ * @param profile - the route's stored profile, when it has one.
+ * @returns the reference the key is read from.
+ */
+export function keyRefOf (provider: string, profile: Record<string, unknown> | undefined): CredentialRef {
+  const named = text(profile?.apiKeyEnv)
+
+  return named !== '' && isCredentialRefName(named) ? credentialRef(named) : deriveKeyRef(provider)
 }
 
 /**
@@ -116,8 +136,7 @@ export async function resolveEndpoint (ctx: HostContext, provider: string): Prom
     )
   }
 
-  const keyRef = text(profile?.apiKeyEnv) || deriveKeyRef(provider)
-  const resolved = await ctx.credentials.resolve(keyRef)
+  const resolved = await ctx.credentials.resolve(keyRefOf(provider, profile))
   const apiKey = text(resolved?.value)
 
   if (apiKey === '') {

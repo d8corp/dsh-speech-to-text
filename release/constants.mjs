@@ -1,13 +1,13 @@
 // src/constants.ts
 /**
-* Fixed identifiers and vocabulary shared by the host and browser halves.
-* @module dsh-speech-to-text/constants
-*/
-/**
 * Id registered in the global speech-provider registry. It is namespaced
 * because ids are global and a duplicate registration throws: the official
 * SenseVoice provider uses `sensevoice-local` and other recognizers own
 * their own short names.
+*
+* The registry's own `SpeechProviderId` brand is compile-time only; the cast
+* keeps it without a runtime import of `dsh-brand`, which this plugin does not
+* declare.
 */
 const PROVIDER_ID = "speech-to-text-universal";
 /** Text shown in Plugins → Voice input → Recognition service. */
