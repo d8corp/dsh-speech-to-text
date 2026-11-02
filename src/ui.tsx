@@ -6,15 +6,15 @@
  * @module dsh-speech-to-text/ui
  */
 
-import type * as ReactTypes from 'react'
+import type { ChangeEvent, MouseEvent, ReactElement, ReactNode } from 'react'
 
 /** One label/description column with its control on the right. */
 export function Row (props: {
   title: string
-  description?: ReactTypes.ReactNode
+  description?: ReactNode
   htmlFor?: string
-  children?: ReactTypes.ReactNode
-}): ReactTypes.ReactElement {
+  children?: ReactNode
+}): ReactElement {
   return (
     <div className='sst-row'>
       <div className='sst-text'>
@@ -41,7 +41,7 @@ export function Select (props: {
   options: SelectOption[]
   disabled?: boolean
   onChange: (value: string) => void
-}): ReactTypes.ReactElement {
+}): ReactElement {
   return (
     <span className='sst-selectWrap'>
       <select
@@ -49,7 +49,7 @@ export function Select (props: {
         className='sst-select'
         value={props.value}
         disabled={props.disabled}
-        onChange={(event: ReactTypes.ChangeEvent<HTMLSelectElement>) => props.onChange(event.target.value)}
+        onChange={(event: ChangeEvent<HTMLSelectElement>) => props.onChange(event.target.value)}
       >
         {props.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
@@ -66,7 +66,7 @@ export function Switch (props: {
   disabled?: boolean
   label: string
   onChange: (checked: boolean) => void
-}): ReactTypes.ReactElement {
+}): ReactElement {
   return (
     <button
       type='button'
@@ -86,10 +86,10 @@ export function Switch (props: {
 
 /** A compact secondary button. */
 export function Button (props: {
-  children: ReactTypes.ReactNode
+  children: ReactNode
   disabled?: boolean
   onClick: () => void
-}): ReactTypes.ReactElement {
+}): ReactElement {
   return (
     <button type='button' className='sst-button' disabled={props.disabled} onClick={props.onClick}>
       {props.children}
@@ -99,14 +99,14 @@ export function Button (props: {
 
 /** An inline link; settings navigation is shell-owned, so it carries an action, not an href. */
 export function Link (props: {
-  children: ReactTypes.ReactNode
+  children: ReactNode
   onClick: () => void
-}): ReactTypes.ReactElement {
+}): ReactElement {
   return (
     <a
       href='#'
       className='sst-link'
-      onClick={(event: ReactTypes.MouseEvent) => {
+      onClick={(event: MouseEvent) => {
         event.preventDefault()
         props.onClick()
       }}
@@ -120,7 +120,7 @@ export function Link (props: {
 export function Notice (props: {
   kind: 'error' | 'status'
   text: string
-}): ReactTypes.ReactElement | null {
+}): ReactElement | null {
   if (props.text === '') return null
 
   return (
