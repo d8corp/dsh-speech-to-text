@@ -68,18 +68,19 @@ with it:
 - The switcher is disabled until both a provider and a model are chosen, so it cannot select a
   recognizer that would fail on the next recording.
 
-**Provider** lists every route the model settings declare — unfiltered, because DSH has no
-audio-modality metadata to filter by. **Model** is read from `GET {baseURL}/models` of the
-chosen route. When you select a provider, the plugin first probes
-`POST {baseURL}/audio/transcriptions`, so a route that does not serve transcription is named at
-that moment rather than after you record.
+**Provider** lists only the routes Settings → Models has configured — a base URL and a stored
+key, the same two facts the host needs before it can place a request. DSH has no audio-modality
+metadata, so a route that serves no transcription stays in the list until you select it and the
+probe says so. **Model** is read from `GET {baseURL}/models` of the chosen route. When you select
+a provider, the plugin first probes `POST {baseURL}/audio/transcriptions`, so a route that does
+not serve transcription is named at that moment rather than after you record.
 
 ## Where values come from
 
 | Value | Owned by | Read through |
 | --- | --- | --- |
 | provider route, base URL | Settings → Models | `ctx.llm.listConfigurableProviders()` + the route's stored profile |
-| API key | DSH credentials | `profile.apiKeyEnv`, else the conventional `<ROUTE>_API_KEY` reference |
+| API key | DSH credentials | `profile.apiKeyEnv`, else the conventional `<ROUTE>_API_KEY` reference; `credentials/describe` tells the page whether it is stored |
 | recognition service, language | official voice-input entry | `remote.speech.catalog()` / `configure()` |
 | provider, model | this plugin (`dsh-speech-to-text` namespace) | its own settings form |
 
@@ -141,7 +142,7 @@ test/                   offline suite: fixtures/host.ts stubs the host, helpers/
 | Symptom | Cause and fix |
 | --- | --- |
 | `Speech to Text` missing from the microphone picker | The plugin is not installed in this profile, or the voice-input bundle is absent. Restart DSH after installing. |
-| Provider list is empty | No route is configured in Settings → Models. |
+| Provider list is empty | No route has both a base URL and a stored key in Settings → Models. |
 | `Provider "X" has no audio transcription endpoint` | That route serves a model API without Whisper-style transcription. Choose another provider. |
 | `Provider "X" rejected the stored API key` | Update the key in Settings → Models. |
 | `Choose a provider in Settings → Speech to Text` at record time | The switcher is on while provider or model is empty. |
