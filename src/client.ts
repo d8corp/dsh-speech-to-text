@@ -54,7 +54,7 @@ export function apply (ctx: Context): void {
         form: forms.get<SectionValues>(SETTINGS_NS),
         speech: ctx.remote.speech,
         llm: ctx.remote.llm,
-        subscribe: (listener: () => void) => {
+        subscribe: listener => {
           const off = REFRESH_EVENTS.map((event) => ctx.remote.$on(event, listener))
 
           return () => {
