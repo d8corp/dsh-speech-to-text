@@ -6,16 +6,8 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 
 import { PROVIDER_NAME, SETTINGS_NS } from './constants'
 import { ensureStyles, openModelsSection } from './utils'
-import type { SectionValues } from './widgets'
+import type { SectionValues, SettingsProps } from './widgets'
 import { Settings } from './widgets'
-
-/** Nav identity of the page; `order` places it after the bundled sections. */
-const SECTION = {
-  name: 'settings.section',
-  id: SETTINGS_NS,
-  order: 31,
-  label: PROVIDER_NAME,
-} as const
 
 /** Events that can change what the page offers. */
 const REFRESH_EVENTS = [
@@ -51,10 +43,14 @@ export function apply (ctx: Context): void {
   const slots = ctx.slots
   const forms = ctx.configForms
 
-  slots.inject('settings.section', () => forms.whileServed([SETTINGS_NS], () => slots.register(
-    {
-      ...SECTION,
-      inject: () => ({
+  slots.inject(
+    'settings.section',
+    () => forms.whileServed([SETTINGS_NS], () => slots.register({
+      name: 'settings.section',
+      id: SETTINGS_NS,
+      order: 31,
+      label: PROVIDER_NAME,
+      inject: (): SettingsProps => ({
         form: forms.get<SectionValues>(SETTINGS_NS),
         speech: ctx.remote.speech,
         llm: ctx.remote.llm,
@@ -67,7 +63,6 @@ export function apply (ctx: Context): void {
         },
         openModels: () => openModelsSection(ctx),
       }),
-    },
-    Settings,
-  )))
+    }, Settings)),
+  )
 }
