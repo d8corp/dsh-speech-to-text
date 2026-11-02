@@ -47,7 +47,7 @@ export const inject = ['remote', 'remote.speech', 'remote.llm', 'slots', 'config
  * @param ctx browser context.
  */
 export function apply (ctx: Context): void {
-  ensureStyles(SETTINGS_NS)
+  ensureStyles(SETTINGS_NS, import.meta.env.DSH_PLUGIN_SPEECH_TO_TEXT_CSS || '')
 
   const slots = ctx.slots
   const forms = ctx.configForms
