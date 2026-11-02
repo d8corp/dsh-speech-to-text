@@ -2,6 +2,7 @@
   "name": "dsh-speech-to-text",
   "version": "0.0.1",
   "description": "Universal speech-to-text provider for DSH voice input: recognizes recordings through any OpenAI-compatible /audio/transcriptions endpoint configured in Settings → Models.",
+  "icon": "./icon.png",
   "type": "module",
   "main": "index.mjs",
   "types": "index.d.ts",
@@ -25,8 +26,11 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "npm run build:client && innetjs release -tc -lc -e",
+    "build": "npm run build:all && innetjs release -tc -lc -e",
     "build:client": "innetjs build -i client -tc -lc -e",
+    "build:theme": "innetjs run buildEnv.ts -e",
+    "build:all": "npm run build:theme && npm run build:client",
+    "release": "npm run build:all && innetjs release -p -tc -lc -e",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit"
