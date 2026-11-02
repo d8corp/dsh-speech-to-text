@@ -17,9 +17,7 @@ export function Switch (props: {
       disabled={props.disabled}
       onClick={() => props.onChange(!props.checked)}
     >
-      <span className='sst-switchTrack' aria-hidden='true'>
-        <span className='sst-switchThumb' />
-      </span>
+      <span className='sst-switchThumb' />
     </button>
   )
 }
