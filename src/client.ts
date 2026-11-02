@@ -5,9 +5,9 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 
 import { PROVIDER_NAME, SETTINGS_NS } from './constants'
-import type { SectionValues } from './page'
-import { Settings } from './page'
 import { ensureStyles, openModelsSection } from './utils'
+import type { SectionValues } from './widgets'
+import { Settings } from './widgets'
 
 /** Nav identity of the page; `order` places it after the bundled sections. */
 const SECTION = {

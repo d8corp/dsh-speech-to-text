@@ -12,9 +12,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { FALLBACK_PROVIDER_ID, LANGUAGE_LABELS, LANGUAGES, PROVIDER_ID, PROVIDER_NAME, SETTINGS_NS } from './constants'
-import type { SelectOption } from './ui'
-import { Button, Link, Notice, Row, Select, Switch } from './ui'
+import { FALLBACK_PROVIDER_ID, LANGUAGE_LABELS, LANGUAGES, PROVIDER_ID, PROVIDER_NAME, SETTINGS_NS } from '../../constants'
+import type { SelectOption } from '../../ui'
+import { Button, Link, Notice, Row, Select, Switch } from '../../ui'
 
 /** Values this plugin owns. */
 export interface SectionValues {
