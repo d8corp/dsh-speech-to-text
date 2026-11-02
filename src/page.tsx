@@ -35,6 +35,21 @@ export interface RouteEntry {
   displayName: string
 }
 
+/**
+ * What every generated Remote method resolves to: the Host's value, or the
+ * carrier's failure. The Remote face folds transport faults into the error
+ * branch, so a call never rejects and an unread answer is a silent lie —
+ * `catalog()` answers `{ ok, value }`, not the catalog.
+ */
+export type RemoteAnswer<T> =
+  | { ok: true, value: T }
+  | { ok: false, error: { message: string } }
+
+/** The current selection the voice-input bundle owns, as the Remote reports it. */
+export interface SpeechCatalog {
+  selection: { providerId: string, language: string }
+}
+
 /** Selection read from the official speech service. */
 export interface Selection {
   providerId: string
@@ -43,14 +58,14 @@ export interface Selection {
 
 /** Speech remote face used by this page. */
 export interface SpeechLike {
-  catalog: () => Promise<{ selection?: { providerId?: string, language?: string } }>
-  configure: (patch: { providerId?: string, language?: string }) => Promise<unknown>
+  catalog: () => Promise<RemoteAnswer<SpeechCatalog>>
+  configure: (patch: { providerId?: string, language?: string }) => Promise<RemoteAnswer<void>>
 }
 
 /** LLM remote face used by this page. */
 export interface LlmLike {
-  listConfigurableProviders: () => Promise<RouteEntry[]>
-  discoverModels: (settingsNs: string, request: { provider: string }) => Promise<Array<{ id: string }>>
+  listConfigurableProviders: () => Promise<RemoteAnswer<RouteEntry[]>>
+  discoverModels: (settingsNs: string, request: { provider: string }) => Promise<RemoteAnswer<Array<{ id: string }>>>
 }
 
 /** Props injected by the slot registration. */
@@ -78,6 +93,23 @@ function messageOf (cause: unknown, fallback: string): string {
 }
 
 /**
+ * Read the value out of a {@link RemoteAnswer}.
+ *
+ * A failed Remote call resolves rather than rejects, so this is the only place
+ * its message can reach the notice line: throwing here routes it through the
+ * same catch every reader and writer already has.
+ *
+ * @param answer what the Remote resolved to.
+ * @returns the Host's value.
+ * @throws the failure's message when the answer carries one.
+ */
+function valueOf<T> (answer: RemoteAnswer<T>): T {
+  if (answer.ok) return answer.value
+
+  throw new Error(answer.error.message)
+}
+
+/**
  * The page body.
  *
  * @param props injected services and the Models navigation action.
@@ -101,14 +133,9 @@ export function Settings (props: SettingsProps) {
   /** Re-read the recognition language and service the voice-input bundle owns. */
   const refreshSelection = useCallback(async () => {
     try {
-      const next = (await props.speech.catalog()).selection
+      const { selection } = valueOf(await props.speech.catalog())
 
-      setSelection(next === undefined
-        ? undefined
-        : {
-            providerId: typeof next.providerId === 'string' ? next.providerId : '',
-            language: typeof next.language === 'string' ? next.language : 'auto',
-          })
+      setSelection({ providerId: selection.providerId, language: selection.language })
     } catch (cause) {
       setError(messageOf(cause, 'Voice input settings are unavailable in this profile.'))
     }
@@ -117,9 +144,9 @@ export function Settings (props: SettingsProps) {
   /** Re-read the provider routes Settings → Models has configured. */
   const refreshRoutes = useCallback(async () => {
     try {
-      const listed = await props.llm.listConfigurableProviders()
+      const listed = valueOf(await props.llm.listConfigurableProviders())
 
-      setRoutes(listed.filter((entry) => typeof entry.provider === 'string' && entry.provider !== ''))
+      setRoutes(listed.filter((entry) => entry.provider !== ''))
     } catch (cause) {
       setError(messageOf(cause, 'Could not read the configured providers.'))
     }
@@ -145,7 +172,7 @@ export function Settings (props: SettingsProps) {
     setListingModels(true)
 
     try {
-      const listed = await props.llm.discoverModels(SETTINGS_NS, { provider })
+      const listed = valueOf(await props.llm.discoverModels(SETTINGS_NS, { provider }))
 
       loadedForRef.current = provider
       setModels(listed.map((model) => model.id))
@@ -209,9 +236,9 @@ export function Settings (props: SettingsProps) {
     setError('')
 
     try {
-      await props.speech.configure(next
+      valueOf(await props.speech.configure(next
         ? { providerId: PROVIDER_ID }
-        : { providerId: FALLBACK_PROVIDER_ID, language: 'auto' })
+        : { providerId: FALLBACK_PROVIDER_ID, language: 'auto' }))
     } catch (cause) {
       setError(messageOf(cause, 'The recognition service could not be changed.'))
     }
@@ -229,7 +256,7 @@ export function Settings (props: SettingsProps) {
     setError('')
 
     try {
-      await props.speech.configure({ language })
+      valueOf(await props.speech.configure({ language }))
     } catch (cause) {
       setError(messageOf(cause, 'The recognition language could not be changed.'))
     }

@@ -102,8 +102,19 @@ function openModelsSection (ctx: ClientContext): boolean {
   return true
 }
 
-/** Services required to mount the contribution. */
-export const inject = ['remote', 'slots', 'configForms']
+/**
+ * Services required to mount the contribution.
+ *
+ * The two `remote.*` names are declarations, not accesses: cordis mounts a
+ * namespace's browser face only for a fiber that declared it, so reading
+ * `ctx.remote.speech` from the page's props factory without this list yields an
+ * absent service. The slot registration crashes on it, the slot registry
+ * retires the entry, and the shell keeps the navigation cell while the content
+ * column renders an invisible error anchor — a blank page, no message.
+ * Declaring them also parks this half until the host side answers, which is
+ * what keeps the page out of a profile that has no voice input.
+ */
+export const inject = ['remote', 'remote.speech', 'remote.llm', 'slots', 'configForms']
 
 /**
  * Register the Settings → Speech to Text section while the Host serves this
