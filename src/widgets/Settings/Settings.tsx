@@ -1,5 +1,5 @@
 /**
- * Settings → Speech to Text.
+ * Plugins → Speech to Text.
  *
  * Four controls: two write to this plugin's own namespace (provider, model)
  * and two write to the namespace the official voice-input bundle owns (the
@@ -7,6 +7,10 @@
  * enable flag or a key — the switch reads `speech-to-text.defaultProvider`
  * back, so the page and Plugins → Voice input cannot disagree, and a credential
  * stays where Settings → Models put it.
+ *
+ * The page renders inside the bundle's own Plugins panel page, which draws the
+ * icon, title, description and enable switch above it — so the body never
+ * repeats the plugin's name as a row heading.
  * @module dsh-speech-to-text/page
  */
 
@@ -16,7 +20,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { FALLBACK_PROVIDER_ID, LANGUAGE_LABELS, LANGUAGES, PROVIDER_ID, PROVIDER_NAME, SETTINGS_NS } from '../../constants'
 import type { LlmConfigurableProvider, RemoteResult, SpeechSelection, TypertRemoteNamespaceMap } from '../../dsh'
 import type { SelectOption } from '../../ui'
-import { Button, Link, Notice, Row, Select, Switch } from '../../ui'
+import { Button, Notice, Row, Select, Switch } from '../../ui'
 
 /** Values this plugin owns. */
 export interface SectionValues {
@@ -30,15 +34,19 @@ export type SpeechLike = Pick<TypertRemoteNamespaceMap['speech'], 'catalog' | 'c
 /** LLM remote face used by this page: only the two calls the page makes. */
 export type LlmLike = Pick<TypertRemoteNamespaceMap['llm'], 'listConfigurableProviders' | 'discoverModels'>
 
-/** Props injected by the slot registration. */
+/**
+ * Props injected by the slot registration.
+ *
+ * The panel's own `form` share is deliberately not taken: it exposes a snapshot
+ * and a raw `mutate`, while this page writes single keys and follows the mirror
+ * as it changes.
+ */
 export interface SettingsProps {
   form: ConfigForm<SectionValues>
   speech: SpeechLike
   llm: LlmLike
   /** Re-reads on settings, adapter or credential changes. */
   subscribe: (listener: () => void) => () => void
-  /** Activates the built-in Models section; false when the shell has no such cell. */
-  openModels: () => boolean
 }
 
 /**
@@ -74,8 +82,8 @@ function valueOf<T> (answer: RemoteResult<T>): T {
 /**
  * The page body.
  *
- * @param props injected services and the Models navigation action.
- * @returns the settings section.
+ * @param props the injected services.
+ * @returns the settings form.
  */
 export function Settings (props: SettingsProps) {
   const [values, setValues] = useState<SectionValues | undefined>(() => props.form.getSnapshot().value)
@@ -282,7 +290,7 @@ export function Settings (props: SettingsProps) {
   return (
     <div className='sst-section'>
       <Row
-        title={PROVIDER_NAME}
+        title='Voice input'
         description={selection === undefined
           ? 'The official voice-input service reported no selection, so the recognizer cannot be switched from here.'
           : enabled
@@ -302,14 +310,7 @@ export function Settings (props: SettingsProps) {
       <Row
         title='Provider'
         htmlFor='sst-provider'
-        description={
-          <>
-            Routes configured in the model settings; their keys stay there.{' '}
-            <Link onClick={() => { if (!props.openModels()) setError('Open Settings → Models from the settings sidebar.') }}>
-              Settings → Models
-            </Link>
-          </>
-        }
+        description='Routes configured in Settings → Models; their keys stay there.'
       >
         <Select
           id='sst-provider'

@@ -102,14 +102,14 @@ describe('createProvider', () => {
       const noProvider = await reason(createProvider(ctx, createConfigStub(config)).transcribe(input, signal))
 
       expect((noProvider as SttError).code).toBe('stt-incomplete')
-      expect((noProvider as SttError).message).toMatch(/choose a provider in settings/i)
+      expect((noProvider as SttError).message).toMatch(/choose a provider in plugins → speech to text/i)
 
       config.provider = 'vllm'
       config.model = ''
 
       const noModel = await reason(createProvider(ctx, createConfigStub(config)).transcribe(input, signal))
 
-      expect((noModel as SttError).message).toMatch(/choose a model in settings/i)
+      expect((noModel as SttError).message).toMatch(/choose a model in plugins → speech to text/i)
       expect(server.requests).toHaveLength(0)
     })
   })

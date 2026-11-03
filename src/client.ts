@@ -1,11 +1,12 @@
 // dsh-speech-to-text — browser half, loaded by the shell's ModuleLoader.
 
 import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 
-import { PROVIDER_NAME, SETTINGS_NS } from './constants'
-import { ensureStyles, listConfiguredProviders, openModelsSection } from './utils'
+import { SETTINGS_NS } from './constants'
+import { ensureStyles, listConfiguredProviders } from './utils'
 import type { LlmLike, SectionValues, SettingsProps } from './widgets'
 import { Settings } from './widgets'
 
@@ -71,9 +72,15 @@ function configuredLlm (ctx: Context): LlmLike {
 }
 
 /**
- * Register the Settings → Speech to Text section while the Host serves this
- * plugin's namespace, so a profile that does not compose the plugin shows no
- * trace of the page.
+ * Register the page the bundle's own Plugins panel shows, while the Host serves
+ * this plugin's namespace, so a profile that does not compose the plugin shows
+ * no trace of it.
+ *
+ * The key is the bundle's package name, which the panel matches against the
+ * package it opened: the page lands between the bundle's description and its
+ * component rows, under the title, icon and switch the panel draws itself.
+ * `plugins.item` is the wrong slot for a bundle — it holds host-plane plugins
+ * that have no package page of their own.
  *
  * @param ctx browser context.
  */
@@ -85,12 +92,10 @@ export function apply (ctx: Context): void {
   const llm = configuredLlm(ctx)
 
   slots.inject(
-    'settings.section',
+    'plugins.bundle.config',
     () => forms.whileServed([SETTINGS_NS], () => slots.register({
-      name: 'settings.section',
-      id: SETTINGS_NS,
-      order: 31,
-      label: PROVIDER_NAME,
+      name: 'plugins.bundle.config',
+      key: SETTINGS_NS,
       inject: (): SettingsProps => ({
         form: forms.get<SectionValues>(SETTINGS_NS),
         speech: ctx.remote.speech,
@@ -102,7 +107,6 @@ export function apply (ctx: Context): void {
             for (const dispose of off) dispose()
           }
         },
-        openModels: () => openModelsSection(ctx),
       }),
     }, Settings)),
   )

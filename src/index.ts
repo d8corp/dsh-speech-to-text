@@ -61,7 +61,7 @@ export function createProvider (ctx: HostContext, config: RuntimeConfig): Speech
 
       if (provider === '' || model === '') {
         throw new SttError(
-          `Choose a ${provider === '' ? 'provider' : 'model'} in Settings → Speech to Text.`,
+          `Choose a ${provider === '' ? 'provider' : 'model'} in Plugins → Speech to Text.`,
           'stt-incomplete',
         )
       }
