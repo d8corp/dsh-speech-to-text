@@ -50,7 +50,7 @@ function createProvider(ctx, config) {
 		async transcribe(input, signal) {
 			const provider = config.provider.get();
 			const model = config.model.get();
-			if (provider === "" || model === "") throw new SttError(`Choose a ${provider === "" ? "provider" : "model"} in Settings → Speech to Text.`, "stt-incomplete");
+			if (provider === "" || model === "") throw new SttError(`Choose a ${provider === "" ? "provider" : "model"} in Plugins → Speech to Text.`, "stt-incomplete");
 			const endpoint = await resolveEndpoint(ctx, provider);
 			const result = await transcribe(endpoint, {
 				audio: input.audio,

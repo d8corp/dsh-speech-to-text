@@ -12,8 +12,8 @@ values of its own: which provider recognizes, and which of its models.
 
 - **Plugins → Voice input → Recognition service** gains a permanent entry `Speech to Text`
   (as long as this plugin is installed).
-- **Settings → Speech to Text** — a page with a switcher, a provider picker, a model picker
-  and the recognition language.
+- **Plugins → Speech to Text** — the bundle's own page in the Plugins panel carries the
+  switcher, the provider picker, the model picker and the recognition language.
 - Recording, transcription and microphone behaviour stay exactly as the official voice-input
   bundle implements them; only the recognizer behind them changes.
 
@@ -33,29 +33,41 @@ npm run build
 dsh plugin --profile web add file:/path/to/dsh-speech-to-text/release
 ```
 
-Reload the Web GUI after installing. If **Settings → Speech to Text** or the
+Reload the Web GUI after installing. If the `Speech to Text` card under **Plugins** or the
 `Speech to Text` entry in the microphone picker is missing, restart `dsh web`.
 
 Installing does not change the voice-input selection: it stays on the bundled local
 recognizer until you turn the switcher on.
 
-## The settings page
+## The plugin page
+
+Open the bundle in the Plugins panel: the panel draws its title, description and enable switch,
+and this plugin's form appears between the description and the component rows.
 
 ```
-Settings → Speech to Text
+Plugins → Speech to Text
 
-  Speech to Text                      [switch]  Use Speech to Text for voice input
+  Speech to Text                v0.0.1              [switch]  [Uninstall]
+      Universal speech-to-text provider for DSH voice input: …
+
+  Voice input                       [switch]  Use Speech to Text for voice input
       On: Plugins → Voice input uses Speech to Text as the recognition service.
 
-  Provider                            [select]  vLLM
-      Routes configured in the model settings; their keys stay there.  Settings → Models
+  Provider                          [select]  vLLM
+      Routes configured in Settings → Models; their keys stay there.
 
-  Model                               [select]  whisper-large-v3   [Retry]
+  Model                             [select]  whisper-large-v3   [Retry]
       N models offered by this provider, as the endpoint lists them.
 
-  Language                            [select]  Auto-detect
+  Language                          [select]  Auto-detect
       Shared with Plugins → Voice input.
+
+  Components · 1 total · 1 running
+  Source
 ```
+
+The top switch is the panel's own — it enables or disables the whole plugin. The `Voice input`
+row below it is this plugin's: it only selects which recognizer the microphone uses.
 
 **The switcher is a mirror, not a second setting.** It reads and writes the same value the
 official Voice input panel owns (`speech-to-text.defaultProvider`), so it can never disagree
@@ -130,7 +142,7 @@ src/
   index.ts              host entry: recognizer, model discovery, page policy
   route.ts              provider route → base URL + key, from the owning services
   stt.ts                /audio/transcriptions, /models, capability probe
-  client.ts             browser entry: registers the settings section
+  client.ts             browser entry: registers the plugins.item card and its page
   page.tsx              the page above
   ui.tsx, styles.ts     hand-rolled controls and design-token styles
   constants.ts          ids, languages, limits
@@ -145,5 +157,5 @@ test/                   offline suite: fixtures/host.ts stubs the host, helpers/
 | Provider list is empty | No route has both a base URL and a stored key in Settings → Models. |
 | `Provider "X" has no audio transcription endpoint` | That route serves a model API without Whisper-style transcription. Choose another provider. |
 | `Provider "X" rejected the stored API key` | Update the key in Settings → Models. |
-| `Choose a provider in Settings → Speech to Text` at record time | The switcher is on while provider or model is empty. |
+| `Choose a provider in Plugins → Speech to Text` at record time | The switcher is on while provider or model is empty. |
 | Transcripts cut off around 120 s | The official voice-input API limit, shared by every recognizer. |
