@@ -8,7 +8,6 @@ export interface SelectOption {
 
 /** A native select, styled to match the shell. */
 export function Select (props: {
-  id: string
   value: string
   options: SelectOption[]
   disabled?: boolean
@@ -17,7 +16,6 @@ export function Select (props: {
   return (
     <span className='sst-selectWrap'>
       <select
-        id={props.id}
         className='sst-select'
         value={props.value}
         disabled={props.disabled}

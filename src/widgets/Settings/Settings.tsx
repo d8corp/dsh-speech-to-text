@@ -309,11 +309,9 @@ export function Settings (props: SettingsProps) {
 
       <Row
         title='Provider'
-        htmlFor='sst-provider'
         description='Routes configured in Settings → Models; their keys stay there.'
       >
         <Select
-          id='sst-provider'
           value={current.provider}
           options={[{ value: '', label: routes.length === 0 ? 'No configured providers' : 'Choose a provider' }, ...providerOptions]}
           disabled={routes.length === 0}
@@ -323,7 +321,6 @@ export function Settings (props: SettingsProps) {
 
       <Row
         title='Model'
-        htmlFor='sst-model'
         description={current.provider === ''
           ? 'Pick a provider first; its models are read from the endpoint.'
           : listingModels
@@ -334,7 +331,6 @@ export function Settings (props: SettingsProps) {
       >
         <>
           <Select
-            id='sst-model'
             value={current.model}
             options={[{ value: '', label: 'Choose a model' }, ...modelOptions]}
             disabled={current.provider === '' || models.length === 0}
@@ -348,11 +344,9 @@ export function Settings (props: SettingsProps) {
 
       <Row
         title='Language'
-        htmlFor='sst-language'
         description='Shared with Plugins → Voice input. Switching this page off resets it to Auto, because the bundled recognizer does not accept every language listed here.'
       >
         <Select
-          id='sst-language'
           value={language}
           options={languageOptions}
           disabled={selection === undefined}
